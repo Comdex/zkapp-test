@@ -14,6 +14,10 @@
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
   "scripts": {
+    "constrain": "tsc -p tsconfig.json && node --experimental-specifier-resolution=node ./build/src/constrain.js",
+    "encrypt": "tsc -p tsconfig.json && node --experimental-specifier-resolution=node ./build/src/encrypt.js",
+    "inner": "tsc -p tsconfig.json && node --experimental-specifier-resolution=node ./build/src/inner_map.js",
+    "sign": "tsc -p tsconfig.json && node --experimental-specifier-resolution=node ./build/src/sign.js",
     "charge": "tsc -p tsconfig.json && node --experimental-specifier-resolution=node ./build/src/charge.js",
     "build": "tsc -p tsconfig.json",
     "coverage": "node --experimental-vm-modules --experimental-wasm-modules --experimental-wasm-threads node_modules/.bin/jest --coverage",
