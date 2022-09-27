@@ -6,7 +6,7 @@ import {
   Permissions,
   method,
   PrivateKey,
-  Party,
+  AccountUpdate,
   State,
   isReady,
   Mina,
@@ -56,13 +56,13 @@ async function test() {
 
   if (doProofs) {
     console.time('compile');
-    await TestZkapp.compile(zkappAddress);
+    await TestZkapp.compile();
     console.timeEnd('compile');
   }
 
   console.log('deploying');
   let tx = await local.transaction(feePayerKey, () => {
-    Party.fundNewAccount(feePayerKey);
+    AccountUpdate.fundNewAccount(feePayerKey);
     zkapp.deploy({ zkappKey });
   });
   if (doProofs) {

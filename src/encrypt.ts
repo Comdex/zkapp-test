@@ -1,16 +1,21 @@
-import { isReady, PrivateKey, Encoding, Encryption } from 'snarkyjs';
+import { isReady, PrivateKey, Encoding, Encryption, PublicKey } from 'snarkyjs';
 
 await isReady;
 
 let privateKey = PrivateKey.random();
 let publicKey = privateKey.toPublicKey();
+console.log('publicKey: ', publicKey.toBase58());
 
-let message = 'This is a secret.';
-let messageFields = Encoding.stringToFields(message);
+// let message = 'This is a secret.';
+// let messageFields = Encoding.stringToFields(message);
+
+let messageFields = publicKey.toFields();
 
 let cipherText = Encryption.encrypt(messageFields, publicKey);
+console.log('ciphertext fs length: ', cipherText.cipherText.length);
 
 let fs = Encryption.decrypt(cipherText, privateKey);
+console.log('fs length: ', fs.length);
 
-let msg = Encoding.stringFromFields(fs);
-console.log('msg: ', msg);
+let pub = PublicKey.ofFields(fs);
+console.log('origin publickey: ', pub.toBase58());
