@@ -1,4 +1,11 @@
-import { isReady, PrivateKey, Encoding, Encryption, PublicKey } from 'snarkyjs';
+import {
+  isReady,
+  PrivateKey,
+  Encoding,
+  Encryption,
+  PublicKey,
+  shutdown,
+} from 'snarkyjs';
 
 await isReady;
 
@@ -19,3 +26,4 @@ console.log('fs length: ', fs.length);
 
 let pub = PublicKey.ofFields(fs);
 console.log('origin publickey: ', pub.toBase58());
+shutdown();
