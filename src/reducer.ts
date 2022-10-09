@@ -17,27 +17,57 @@ import {
   arrayProp,
   shutdown,
   prop,
+  Group,
 } from 'snarkyjs';
-import assert from 'node:assert/strict';
-import { Action } from './models/action';
-import { NFT } from './models/nft';
-
 await isReady;
+
+const doProofs = true;
+const initialCounter = Field.zero;
+
+const TEST_TYPE1 = Field(1);
+const TEST_TYPE2 = Field(2);
+class Action extends CircuitValue {
+  @prop type: Field;
+  @prop data: Group;
+
+  constructor(type: Field, data: Group) {
+    super();
+    this.type = type;
+    this.data = data;
+  }
+
+  isType1(): Bool {
+    return this.type.equals(TEST_TYPE1);
+  }
+
+  isType2(): Bool {
+    return this.type.equals(TEST_TYPE2);
+  }
+
+  isDummyData(): Bool {
+    return this.type.equals(Field.zero);
+  }
+
+  static type1(data: Group): Action {
+    return new Action(TEST_TYPE1, data);
+  }
+
+  static type2(data: Group) {
+    return new Action(TEST_TYPE2, data);
+  }
+}
 
 class TestZkapp extends SmartContract {
   reducer = Experimental.Reducer({ actionType: Action });
 
-  // on-chain version of our state. it will typically lag behind the
-  // version that's implicitly represented by the list of actions
   @state(Field) counter = State<Field>();
-  // helper field to store the point in the action history that our on-chain state is at
   @state(Field) actionsHash = State<Field>();
 
-  @method testAction1(nft: NFT) {
-    this.reducer.dispatch(Action.mint(nft));
+  @method testAction1(data: Group) {
+    this.reducer.dispatch(Action.type1(data));
   }
-  @method testAction2(nft: NFT) {
-    this.reducer.dispatch(Action.transfer(nft, nft.hash()));
+  @method testAction2(data: Group) {
+    this.reducer.dispatch(Action.type2(data));
   }
 
   @method rollup() {
@@ -55,7 +85,7 @@ class TestZkapp extends SmartContract {
         pendingActions,
         Field,
         (state: Field, action: Action) => {
-          let newState = Circuit.if(action.isMint(), state.add(1), state);
+          let newState = Circuit.if(action.isType1(), state.add(1), state);
           return newState;
         },
         { state: counter, actionsHash }
@@ -65,9 +95,6 @@ class TestZkapp extends SmartContract {
     this.actionsHash.set(newActionsHash);
   }
 }
-
-const doProofs = true;
-const initialCounter = Field.zero;
 
 let Local = Mina.LocalBlockchain();
 Mina.setActiveInstance(Local);
@@ -103,9 +130,7 @@ console.log('applying actions..');
 console.log('action 1');
 
 tx = await Mina.transaction(feePayer, () => {
-  zkapp.testAction1(
-    NFT.createNFTwithoutID('hello1', PrivateKey.random().toPublicKey())
-  );
+  zkapp.testAction1(PrivateKey.random().toPublicKey().toGroup());
   if (!doProofs) zkapp.sign(zkappKey);
 });
 if (doProofs) await tx.prove();
@@ -113,9 +138,7 @@ tx.send();
 
 console.log('action 2');
 tx = await Mina.transaction(feePayer, () => {
-  zkapp.testAction1(
-    NFT.createNFTwithoutID('hello1', PrivateKey.random().toPublicKey())
-  );
+  zkapp.testAction1(PrivateKey.random().toPublicKey().toGroup());
   if (!doProofs) zkapp.sign(zkappKey);
 });
 if (doProofs) await tx.prove();
@@ -123,9 +146,7 @@ tx.send();
 
 console.log('action 3');
 tx = await Mina.transaction(feePayer, () => {
-  zkapp.testAction1(
-    NFT.createNFTwithoutID('hello1', PrivateKey.random().toPublicKey())
-  );
+  zkapp.testAction1(PrivateKey.random().toPublicKey().toGroup());
   if (!doProofs) zkapp.sign(zkappKey);
 });
 if (doProofs) await tx.prove();
@@ -143,15 +164,12 @@ if (doProofs) await tx.prove();
 tx.send();
 
 console.log('state after rollup: ' + zkapp.counter.get());
-assert.deepEqual(zkapp.counter.get().toString(), '3');
 
 console.log('applying more actions');
 
 console.log('action 4');
 tx = await Mina.transaction(feePayer, () => {
-  zkapp.testAction2(
-    NFT.createNFTwithoutID('hello1', PrivateKey.random().toPublicKey())
-  );
+  zkapp.testAction2(PrivateKey.random().toPublicKey().toGroup());
   if (!doProofs) zkapp.sign(zkappKey);
 });
 if (doProofs) await tx.prove();
@@ -159,9 +177,7 @@ tx.send();
 
 console.log('action 5');
 tx = await Mina.transaction(feePayer, () => {
-  zkapp.testAction1(
-    NFT.createNFTwithoutID('hello1', PrivateKey.random().toPublicKey())
-  );
+  zkapp.testAction1(PrivateKey.random().toPublicKey().toGroup());
   if (!doProofs) zkapp.sign(zkappKey);
 });
 if (doProofs) await tx.prove();
@@ -179,6 +195,4 @@ if (doProofs) await tx.prove();
 tx.send();
 
 console.log('state after rollup: ' + zkapp.counter.get());
-assert.equal(zkapp.counter.get().toString(), '4');
-
 shutdown();
